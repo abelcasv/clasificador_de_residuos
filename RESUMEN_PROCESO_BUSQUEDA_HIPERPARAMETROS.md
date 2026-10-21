@@ -207,8 +207,31 @@ A continuación se presentan las curvas conjuntas de Pérdida (Cross Entropy Los
 
 ---
 
-## 8. Conclusiones
-1. **Cumplimiento Integral de Objetivos:** Se ha diseñado un clasificador de residuos en PyTorch superando el 85% de test (alcanzando el **91,34%**), con parada anticipada funcional, 5 configuraciones documentadas y sin usar toy problems.
+## 8. Arquitectura del Código y Principios de Diseño (Clean Code)
+
+El proyecto se ha estructurado en un único cuaderno `.ipynb` completamente autónomo, diseñado bajo principios estrictos de **Clean Code**, **SOLID** y **KISS**:
+
+1. **Single Responsibility Principle (SRP - Responsabilidad Única):**
+   * `SafeImageFolder`: Validador exclusivo del sistema de archivos y filtrado de extensiones válidas.
+   * `DataPipeline`: Factoría dedicada únicamente a instanciar transformaciones (Data Augmentation) y construir DataLoaders.
+   * `WasteCNN`: Definición pura del grafo convolucional y del paso hacia adelante (*forward pass*).
+   * `EarlyStopping`: Componente aislado cuya única función es monitorizar la pérdida de validación y respaldar el mejor estado (`state_dict`).
+   * `ModelTrainer`: Orquestador de las épocas de entrenamiento y validación.
+   * `ModelEvaluator`: Generador de análisis gráfico dual (pérdida y precisión), matrices de confusión y métricas formales.
+
+2. **Open/Closed Principle (OCP - Abierto/Cerrado):**
+   * La clase `ModelTrainer` y `ModelEvaluator` aceptan de forma polimórfica cualquier arquitectura que herede de `nn.Module` (tanto `WasteCNN` como `ResNet-18` o `MobileNetV2`) sin modificar su lógica interna.
+
+3. **KISS (Keep It Simple, Stupid) & DRY (Don't Repeat Yourself):**
+   * Se elimina la duplicación de bucles `for epoch in ...` en múltiples celdas, canalizando la ejecución a través de llamadas limpias a los métodos de `ModelTrainer`.
+
+4. **Cumplimiento Estricto de Directrices:**
+   * Todas las celdas de código ejecutables están **100% libres de comentarios (`#`)**, organizando la guía y explicaciones en celdas de tipo Markdown estructuradas.
+
+---
+
+## 9. Conclusiones
+1. **Cumplimiento Integral de Objetivos:** Se ha diseñado un clasificador de residuos en PyTorch superando con holgura el 85% de test (alcanzando el **91,34%**), con parada anticipada funcional, 5 configuraciones documentadas y sin usar toy problems.
 2. **Implementación de Todos los Elementos Opcionales:** Se incorporó **Data Augmentation**, **Hyperparameter Tuning automatizado con Optuna** y **Transfer Learning con comparación de arquitecturas (ResNet-18 y MobileNetV2)**, optando a la máxima calificación de la práctica.
 3. **Lección Metodológica:** El incremento indiscriminado de neuronas en capas densas (Prueba 2) es contraproducente cuando el problema radica en la resolución espacial y en la profundidad de los mapas de características. El uso de Transfer Learning permitió transferir filtros visuales de bajo y medio nivel (bordes, curvaturas, brillos volumétricos) resolviendo el problema de confusión entre metal y cristal.
 4. **Entrega de Código:** El cuaderno `main.ipynb` respeta estrictamente la directriz del profesor al estar completamente libre de comentarios (`#`) en todas sus celdas ejecutables.

@@ -1,0 +1,68 @@
+Época [ 1/50] | Train Loss: 1.9162 | Train Acc: 0.1799 | Val Loss: 1.8076 | Val Acc: 0.2644
+   -> Mejora en validación: guardamos este modelo
+Época [ 2/50] | Train Loss: 1.8021 | Train Acc: 0.2821 | Val Loss: 1.7365 | Val Acc: 0.2615
+   -> Mejora en validación: guardamos este modelo
+Época [ 3/50] | Train Loss: 1.6429 | Train Acc: 0.3501 | Val Loss: 1.6464 | Val Acc: 0.3707
+   -> Mejora en validación: guardamos este modelo
+Época [ 4/50] | Train Loss: 1.7048 | Train Acc: 0.3366 | Val Loss: 1.5554 | Val Acc: 0.4483
+   -> Mejora en validación: guardamos este modelo
+Época [ 5/50] | Train Loss: 1.5091 | Train Acc: 0.4266 | Val Loss: 1.3502 | Val Acc: 0.4971
+   -> Mejora en validación: guardamos este modelo
+Época [ 6/50] | Train Loss: 1.5314 | Train Acc: 0.4259 | Val Loss: 1.4060 | Val Acc: 0.4310
+   -> Sin mejora (1/5)
+Época [ 7/50] | Train Loss: 1.4514 | Train Acc: 0.4547 | Val Loss: 1.2417 | Val Acc: 0.5546
+   -> Mejora en validación: guardamos este modelo
+Época [ 8/50] | Train Loss: 1.3960 | Train Acc: 0.4731 | Val Loss: 1.2693 | Val Acc: 0.5259
+   -> Sin mejora (1/5)
+Época [ 9/50] | Train Loss: 1.4786 | Train Acc: 0.4621 | Val Loss: 1.3466 | Val Acc: 0.5000
+   -> Sin mejora (2/5)
+Época [10/50] | Train Loss: 1.3516 | Train Acc: 0.5024 | Val Loss: 1.1856 | Val Acc: 0.5632
+   -> Mejora en validación: guardamos este modelo
+Época [11/50] | Train Loss: 1.3436 | Train Acc: 0.5184 | Val Loss: 1.1739 | Val Acc: 0.5948
+   -> Mejora en validación: guardamos este modelo
+Época [12/50] | Train Loss: 1.3235 | Train Acc: 0.5086 | Val Loss: 1.1103 | Val Acc: 0.5690
+   -> Mejora en validación: guardamos este modelo
+Época [13/50] | Train Loss: 1.2418 | Train Acc: 0.5453 | Val Loss: 1.1827 | Val Acc: 0.5632
+   -> Sin mejora (1/5)
+Época [14/50] | Train Loss: 1.1764 | Train Acc: 0.5704 | Val Loss: 1.0904 | Val Acc: 0.5747
+   -> Mejora en validación: guardamos este modelo
+Época [15/50] | Train Loss: 1.2244 | Train Acc: 0.5404 | Val Loss: 1.0308 | Val Acc: 0.6552
+   -> Mejora en validación: guardamos este modelo
+Época [16/50] | Train Loss: 1.1890 | Train Acc: 0.5734 | Val Loss: 1.0066 | Val Acc: 0.6609
+   -> Mejora en validación: guardamos este modelo
+Época [17/50] | Train Loss: 1.2024 | Train Acc: 0.5630 | Val Loss: 1.0939 | Val Acc: 0.5948
+   -> Sin mejora (1/5)
+Época [18/50] | Train Loss: 1.2033 | Train Acc: 0.5532 | Val Loss: 1.1329 | Val Acc: 0.5862
+   -> Sin mejora (2/5)
+Época [19/50] | Train Loss: 1.1396 | Train Acc: 0.5820 | Val Loss: 0.9585 | Val Acc: 0.6695
+   -> Mejora en validación: guardamos este modelo
+Época [20/50] | Train Loss: 1.0785 | Train Acc: 0.6077 | Val Loss: 0.9152 | Val Acc: 0.7069
+   -> Mejora en validación: guardamos este modelo
+Época [21/50] | Train Loss: 1.1073 | Train Acc: 0.6193 | Val Loss: 0.9889 | Val Acc: 0.6580
+   -> Sin mejora (1/5)
+Época [22/50] | Train Loss: 1.2717 | Train Acc: 0.5208 | Val Loss: 1.1211 | Val Acc: 0.5977
+   -> Sin mejora (2/5)
+Época [23/50] | Train Loss: 1.1496 | Train Acc: 0.5630 | Val Loss: 0.9576 | Val Acc: 0.6724
+   -> Sin mejora (3/5)
+Época [24/50] | Train Loss: 1.0972 | Train Acc: 0.5991 | Val Loss: 0.9996 | Val Acc: 0.6494
+   -> Sin mejora (4/5)
+Época [25/50] | Train Loss: 1.0668 | Train Acc: 0.6279 | Val Loss: 0.9612 | Val Acc: 0.6408
+   -> Sin mejora (5/5)
+
+Parada temprana en la época 25: la mejor fue la 20 (Val Loss: 0.9152)
+
+¡Entrenamiento completado! Tiempo total: 1409.66 segundos
+
+precision    recall  f1-score   support
+
+ t-cardboard       0.76      0.83      0.80        54
+   t-e-waste       0.61      0.59      0.60        64
+     t-glass       0.67      0.65      0.66        49
+     t-metal       0.54      0.30      0.38        47
+   t-organic       0.65      0.80      0.72        56
+   t-plastic       0.73      0.81      0.77        47
+   t-textile       0.62      0.63      0.63        41
+
+    accuracy                           0.66       358
+   macro avg       0.65      0.66      0.65       358
+weighted avg       0.66      0.66      0.65       358

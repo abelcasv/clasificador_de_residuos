@@ -27,12 +27,8 @@ La automatización de la separación de residuos en plantas de tratamiento y rec
 * `t-plastic` (Plásticos y envases)
 * `t-textile` (Ropa y telas)
 
-### 1.2 Evaluación de Conjuntos de Datos Candidatos
-Conforme a las recomendaciones de la práctica, se evaluaron tres conjuntos de datos candidatos antes de iniciar el desarrollo:
-
-1. **Candidato 1: TrashNet (Stanford / Kaggle):** 6 clases, ~2.500 imágenes. Aunque es un referente clásico, todas las imágenes fueron tomadas en laboratorio sobre cartulina blanca impecable con iluminación uniforme, lo que limita la capacidad de generalización en condiciones de iluminación o fondos reales.
-2. **Candidato 2: TACO Dataset (Trash Annotations in Context):** Imágenes de residuos en exteriores de muy alta resolución con anotaciones de segmentación. Presenta un severo desbalance de clases (algunas clases con <15 muestras y otras con >800) y requiere un preprocesamiento complejo de recorte por polígonos que introducía ruido de recorte.
-3. **Candidato 3 (Seleccionado): datasetAA2 / Basura_Dataset:** 2.340 imágenes reales distribuidas en 7 categorías equilibradas, tomadas en escenarios heterogéneos (suelos urbanos, contenedores, interiores y exteriores) con variaciones de iluminación, escala y ángulo de cámara.
+### 1.2 Selección del Conjunto de Datos
+Conforme a las indicaciones del profesor, la elección del conjunto de datos se consensuó directamente en tutoría previa para evitar problemas triviales ("toy problems" como MNIST o CIFAR). Se seleccionó este dataset real procedente de la plataforma Kaggle, el cual fue validado por el profesor al cumplir todos los requisitos de la práctica: clasificación supervisada multiclase en un problema realista de economía circular, con 7 categorías bien definidas y más de 250 imágenes por clase.
 
 ### 1.3 Distribución y Partición de los Datos
 Para garantizar una evaluación no sesgada y reproducible, se realizó una partición estratificada mediante la librería `split-folders` con una proporción **70% Entrenamiento / 15% Validación / 15% Test**:
@@ -199,7 +195,7 @@ A continuación se presentan las curvas conjuntas de Pérdida (Cross Entropy Los
 * **Prueba 4 (CNN Optimizada 128x128):**
   ![Curvas Prueba 4](results/prueba_4_curvas.png)
 * **Prueba 5 (Transfer Learning ResNet-18):**
-  ![Curvas Prueba 5](results/Quinta%20prueba.png)
+  ![Curvas Prueba 5](results/prueba_5_curvas.png)
 
 ### 7.2 Comparativa de Matrices de Confusión (El Antes y el Después)
 

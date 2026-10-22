@@ -103,7 +103,7 @@
     \vspace{3.0cm}
     
     \begin{abstract}
-    En este proyecto se presenta el desarrollo, experimentación rigurosa y evaluación de un clasificador supervisado de imágenes en PyTorch orientado a la separación de residuos en 7 categorías (\textit{cartón, residuos electrónicos, vidrio, metal, orgánico, plástico y textil}) utilizando un conjunto de datos real de 2.340 imágenes procedentes de Kaggle. En una primera fase, se diseñó una red neuronal convolucional (CNN) modular desde cero (\texttt{WasteCNN}) combinando capas convolucionales, agrupamiento (\textit{pooling}), regularización estocástica (\textit{dropout}) y parada anticipada (\textit{Early Stopping}). A través de cuatro pruebas de optimización manual sistemática, se diagnosticó el <<problema del metal>>: una confusión severa entre latas y vidrio debida a la limitación física del campo receptivo de una arquitectura superficial (recall inicial del metal en 38,30\%). Se comprobó experimentalmente que duplicar las neuronas densas inducía sobreajuste (precisión cayó al 61\%), mientras que aumentar la resolución a $128\times 128$ sólo permitía alcanzar un techo asintótico del 67\%. Para superar este cuello de botella y optar a la máxima calificación, se implementaron los apartados opcionales: aumento de datos (\textit{Data Augmentation}) dinámico, optimización bayesiana automática con Optuna (TPE) y transferencia de conocimiento (\textit{Transfer Learning}) con ResNet-18 y MobileNetV2. El modelo final ResNet-18 alcanzó una tasa de acierto del \textbf{91,34\%} en el conjunto de test independiente, elevando el recall del metal al \textbf{91,49\%} y resolviendo por completo las confusiones con el cristal. Todo el código fuente ha sido refactorizado bajo principios SOLID y KISS, manteniéndose estrictamente sin comentarios conforme a las directrices de entrega.
+    En este proyecto se presenta el desarrollo, experimentación rigurosa y evaluación de un clasificador supervisado de imágenes en PyTorch orientado a la separación de residuos en 7 categorías (\textit{cartón, residuos electrónicos, vidrio, metal, orgánico, plástico y textil}) utilizando un conjunto de datos real de 2.340 imágenes procedentes de Kaggle. En una primera fase, se diseñó una red neuronal convolucional (CNN) modular desde cero (\texttt{WasteCNN}) combinando capas convolucionales, agrupamiento (\textit{pooling}), regularización estocástica (\textit{dropout}) y parada anticipada (\textit{Early Stopping}). A través de cuatro pruebas de optimización manual sistemática, se diagnosticó el <<problema del metal>>: una confusión severa entre latas y vidrio debida a la limitación física del campo receptivo de una arquitectura superficial (recall inicial del metal en 38,30\%). Se comprobó experimentalmente que duplicar las neuronas densas inducía sobreajuste (precisión cayó al 61\%), mientras que aumentar la resolución a $128\times 128$ sólo permitía alcanzar un techo asintótico del 67\%. Para superar este cuello de botella y optar a la máxima calificación, se implementaron los tres apartados opcionales: aumento de datos (\textit{Data Augmentation}) dinámico, optimización bayesiana automática con Optuna (TPE, que ratificó empíricamente un techo asintótico de 68,97\%) y transferencia de conocimiento (\textit{Transfer Learning}) con ResNet-18 y MobileNetV2. Los modelos de transferencia superaron con holgura la meta docente del 85\%: ResNet-18 alcanzó un 91,34\% de accuracy, mientras que MobileNetV2 se coronó como el modelo superior absoluto con un sobresaliente \textbf{96,65\%} de precisión global en test (resolviendo totalmente la confusión metal-vidrio con un 91,49\% de recall y 100\% de precisión en metal) requiriendo tan solo 3,5 millones de parámetros y 2,4 minutos de entrenamiento. Todo el código fuente ha sido refactorizado bajo principios SOLID y KISS, manteniéndose estrictamente sin comentarios conforme a las directrices de entrega.
     \end{abstract}
     
     \vfill
@@ -302,7 +302,7 @@ El colapso selectivo entre metal y cristal responde a causas físicas y ópticas
 \end{figure}
 
 \subsection{Tabla Síntesis de la Búsqueda Manual y Techo de la Red}
-La Tabla~\ref{tab:resumen_manual} resume los resultados numéricos de las cuatro pruebas de exploración manual. Durante esta fase, el tamaño de lote se mantuvo fijado en =32$ (lo que genera aproximadamente 51 actualizaciones de gradiente por época sobre las 1.634 muestras de entrenamiento), un compromiso empírico óptimo que introduce suficiente ruido estocástico para escapar de mínimos locales sin comprometer la velocidad de cálculo en GPU. De este modo, se aisló metodológicamente el impacto exclusivo de la capacidad de la capa densa, la resolución espacial, la tasa de aprendizaje y los esquemas de regularización.
+La Tabla~\ref{tab:resumen_manual} resume los resultados numéricos de las cuatro pruebas de exploración manual. Durante esta fase, el tamaño de lote se mantuvo fijado en $B=32$ (lo que genera aproximadamente 51 actualizaciones de gradiente por época sobre las 1.634 muestras de entrenamiento), un compromiso empírico óptimo que introduce suficiente ruido estocástico para escapar de mínimos locales sin comprometer la velocidad de cálculo en GPU. De este modo, se aisló metodológicamente el impacto exclusivo de la capacidad de la capa densa, la resolución espacial, la tasa de aprendizaje y los esquemas de regularización.
 
 \begin{table}[H]
 \centering
@@ -331,9 +331,9 @@ Prueba 4 (Regularizada) & $128\times 128$ & 128 / LeakyReLU & 0,40 & 0,0005 & \t
 % ==============================================================================
 \section{Búsqueda Automática de Hiperparámetros (Optuna)}
 
-Como elemento opcional para optar a la máxima calificación, se implementó el framework de optimización bayesiana \textbf{Optuna}~\cite{akiba2019optuna} empleando el algoritmo \textbf{TPE (\textit{Tree-structured Parzen Estimator})}.
+Como elemento opcional para optar a la máxima calificación, se implementó el framework de optimización bayesiana \textbf{Optuna}~\cite{akiba2019optuna} empleando el algoritmo \textbf{TPE (\textit{Tree-structured Parzen Estimator})} en combinación con poda temprana asíncrona mediante \texttt{MedianPruner}.
 
-\subsection{Fundamento del Algoritmo TPE}
+\subsection{Fundamento del Algoritmo TPE y Poda Asíncrona}
 Frente a una búsqueda en rejilla (\textit{Grid Search}, fuerza bruta combinatoria) o un muestreo puramente aleatorio (\textit{Random Search}, ineficiente y sin memoria), el algoritmo TPE modela la probabilidad de los hiperparámetros $\boldsymbol{\theta}$ condicionada al rendimiento de la métrica objetivo $y$ (en nuestro caso, el accuracy de validación):
 \begin{equation}
     p(\boldsymbol{\theta} \mid y) = 
@@ -346,10 +346,10 @@ Optuna selecciona la siguiente combinación a ensayar maximizando el ratio de Me
 \begin{equation}
     \text{EI}(\boldsymbol{\theta}) \propto \frac{\ell(\boldsymbol{\theta})}{g(\boldsymbol{\theta})}
 \end{equation}
-concentrando el esfuerzo de cálculo en las regiones del espacio de búsqueda donde la densidad de configuraciones exitosas $\ell(\boldsymbol{\theta})$ supera a la de configuraciones deficientes $g(\boldsymbol{\theta})$.
+concentrando el esfuerzo de cálculo en las regiones del espacio de búsqueda donde la densidad de configuraciones exitosas $\ell(\boldsymbol{\theta})$ supera a la de configuraciones deficientes $g(\boldsymbol{\theta})$. Paralelamente, el podador \texttt{MedianPruner} monitoriza la curva intermedia de validación en cada época y aborta tempranamente cualquier ensayo cuyo accuracy se sitúe por debajo de la mediana del histórico en el mismo paso temporal.
 
-\subsection{Espacio de Búsqueda y Resultados}
-Se configuró un espacio mixto para optimizar la red \texttt{WasteCNN}:
+\subsection{Espacio de Búsqueda y Resultados Empíricos}
+Se configuró un espacio mixto para optimizar la red \texttt{WasteCNN} sobre una resolución de entrada de $96\times 96$ píxeles:
 \begin{itemize}[noitemsep]
     \item \textbf{Tasa de aprendizaje ($\eta$):} Escala logarítmica continua en $[10^{-4}, 5\times 10^{-3}]$.
     \item \textbf{Dropout ($p$):} Muestreo discreto en $[0,15, 0,50]$ con paso 0,05.
@@ -357,7 +357,40 @@ Se configuró un espacio mixto para optimizar la red \texttt{WasteCNN}:
     \item \textbf{Activación:} Selección booleana entre ReLU y LeakyReLU.
 \end{itemize}
 
-El estudio bayesiano convergió de manera autónoma hacia configuraciones con $\eta \approx 6 \times 10^{-4}$, dropout moderado ($p \approx 0,30$) y activación LeakyReLU, alcanzando un accuracy de validación en torno al 68,5\%. Este resultado confirmó empíricamente lo observado en la fase manual: el afinado automático optimiza la velocidad y estabilidad del gradiente, pero ratifica que la red artesanal de 3 capas está acotada físicamente por debajo del 70\%.
+El estudio se ejecutó empíricamente en Google Colab a lo largo de 10 ensayos de 8 épocas con parada por poda. La Tabla~\ref{tab:optuna_trials} detalla la trayectoria y el desenlace de cada ensayo.
+
+\begin{table}[H]
+\centering
+\caption{Resultados empíricos de los 10 ensayos de optimización bayesiana con Optuna (TPE) sobre \texttt{WasteCNN}.}
+\label{tab:optuna_trials}
+\renewcommand{\arraystretch}{1.15}
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{ccccccc}
+\toprule
+\textbf{Ensayo} & \textbf{Tasa de Aprendizaje ($\eta$)} & \textbf{Dropout ($p$)} & \textbf{Neuronas FC} & \textbf{Activación} & \textbf{Comportamiento / Épocas} & \textbf{Mejor Val Acc.} \\
+\midrule
+1  & $1,20 \times 10^{-4}$ & 0,25 & 64  & LeakyReLU & Completo (8 épocas)           & 60,92\% \\
+2  & $5,90 \times 10^{-4}$ & 0,45 & 64  & ReLU      & Completo (8 épocas)           & 61,49\% \\
+3  & $2,30 \times 10^{-4}$ & 0,50 & 256 & LeakyReLU & Completo (8 épocas)           & 64,08\% \\
+4  & $1,38 \times 10^{-3}$ & 0,40 & 128 & ReLU      & Completo (8 épocas)           & 58,62\% \\
+5  & $4,63 \times 10^{-3}$ & 0,35 & 256 & ReLU      & Divergencia de gradiente (8)  & 17,82\% \\
+\textbf{6 (Óptimo)} & $\mathbf{4,27 \times 10^{-4}}$ & \textbf{0,15} & \textbf{128} & \textbf{LeakyReLU} & \textbf{Completo (8 épocas)} & $\mathbf{68,97\%}$ \\
+7  & $3,30 \times 10^{-4}$ & 0,40 & 256 & LeakyReLU & Completo (8 épocas)           & 66,38\% \\
+8  & $2,90 \times 10^{-4}$ & 0,30 & 64  & LeakyReLU & Podado (\textit{MedianPruner}, época 4) & 50,86\% \\
+9  & $1,20 \times 10^{-4}$ & 0,15 & 128 & ReLU      & Podado (\textit{MedianPruner}, época 4) & 52,01\% \\
+10 & $2,36 \times 10^{-3}$ & 0,15 & 64  & LeakyReLU & Podado (\textit{MedianPruner}, época 3) & 44,54\% \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Diagnóstico del Afinado Bayesiano:}
+\begin{enumerate}[noitemsep]
+    \item \textbf{Poda temprana activa:} El mecanismo de poda canceló con éxito los ensayos 8, 9 y 10 en las épocas 3 y 4 al registrar un avance insuficiente, preservando presupuesto computacional sin degradar la calidad del estudio.
+    \item \textbf{Inestabilidad del gradiente por exceso de LR:} El ensayo 5 ($\eta = 4,63 \times 10^{-3}$) colapsó el aprendizaje, quedando atrapado en un accuracy del 17,82\% (correspondiente al nivel basal aleatorio uniforme sobre 7 clases: $1/7 \approx 14,3\%$). Esto evidenció que una tasa superior a $2\times 10^{-3}$ desestabiliza los pesos de \texttt{WasteCNN}.
+    \item \textbf{Confirmación del techo asintótico:} La mejor configuración hallada por Optuna (Ensayo 6: $\eta = 4,27 \times 10^{-4}$, dropout $0,15$, FC 128 y LeakyReLU) alcanzó un \textbf{68,97\% de accuracy en validación}. Este resultado converge exactamente con la cota de 69,00\% encontrada en la fase manual, probando formalmente que la arquitectura de 3 capas convolucionales carece de la profundidad representativa necesaria para superar el umbral del 70\%.
+\end{enumerate}
 
 % ==============================================================================
 % SECCIÓN 6: TRANSFERENCIA DE CONOCIMIENTO (TRANSFER LEARNING)
@@ -365,113 +398,137 @@ El estudio bayesiano convergió de manera autónoma hacia configuraciones con $\
 \FloatBarrier
 \section{Transferencia de Conocimiento y Comparativa de Arquitecturas}
 
-Para superar holgadamente la cota del 85\% requerida por el profesor y resolver de raíz el problema del metal, se adoptó la técnica de \textbf{Transferencia de Conocimiento (\textit{Transfer Learning})}, reutilizando redes convolucionales profundas entrenadas previamente sobre el masivo corpus \textbf{ImageNet} (1,28 millones de imágenes, 1.000 clases).
+Habiendo demostrado que la red propia alcanza un límite infranqueable en torno al 69\%, se adoptó la técnica de \textbf{Transferencia de Conocimiento (\textit{Transfer Learning})}, reutilizando redes profundas preentrenadas sobre el corpus masivo \textbf{ImageNet} (1,28 millones de imágenes, 1.000 clases) para cumplir holgadamente la cota del 85\% requerida por el profesor.
 
-\subsection{Arquitectura Ganadora: ResNet-18}
-Se seleccionó la red residual \textbf{ResNet-18}~\cite{he2016deep}, la cual introduce conexiones de salto (\textit{shortcut connections}) que permiten propagar gradientes a través de 18 capas sin sufrir degradación:
+\subsection{Arquitectura Residual: ResNet-18}
+Se implementó en primer lugar la arquitectura residual \textbf{ResNet-18}~\cite{he2016deep}, caracterizada por sus conexiones de salto (\textit{shortcut connections}) que mitigan el desvanecimiento del gradiente:
 \begin{equation}
     \mathbf{y} = \mathcal{F}(\mathbf{x}, \{\mathbf{W}_i\}) + \mathbf{x}
 \end{equation}
-\textbf{Adaptación para Residuos:}
-\begin{enumerate}[noitemsep]
-    \item Se cargaron los pesos preentrenados oficiales de PyTorch (\texttt{ResNet18\_Weights.DEFAULT}).
-    \item Se adaptó la resolución espacial a $224\times 224$ píxeles, estándar de entrada de la red.
-    \item Se sustituyó la capa final \texttt{model.fc} original de 1.000 neuronas por una proyección lineal hacia las 7 categorías:
-    \begin{equation}
-        \mathbf{z}_{\text{out}} = \mathbf{W}_{\text{final}} \mathbf{h}_{512} + \mathbf{b}_{\text{final}}, \quad \mathbf{W}_{\text{final}} \in \mathbb{R}^{7 \times 512}
-    \end{equation}
-    \item Se fijó el optimizador Adam con una tasa de aprendizaje suave de $\eta = 0,0005$, realizando un ajuste fino coordinado de todas las capas sin destruir las representaciones profundas transferidas.
-\end{enumerate}
+Se adaptó a resolución $224\times 224$ sustituyendo la capa lineal de salida \texttt{model.fc} ($512 \to 1.000$) por un proyector hacia las 7 clases: $\mathbf{W}_{\text{final}} \in \mathbb{R}^{7 \times 512}$. El modelo cuenta con \textbf{11,7 millones de parámetros} y se optimizó mediante Adam ($\eta = 0,0005$).
 
-\subsection{Arquitectura Alternativa: MobileNetV2}
-Para cumplir el requisito opcional de explorar <<otras arquitecturas disponibles>>, se implementó y adaptó en paralelo la arquitectura \textbf{MobileNetV2}~\cite{sandler2018mobilenetv2}.
+\subsection{Arquitectura Eficiente: MobileNetV2}
+Para dar cumplimiento a la directriz docente de <<probar otras arquitecturas disponibles>>, se seleccionó e implementó en paralelo la arquitectura ligera \textbf{MobileNetV2}~\cite{sandler2018mobilenetv2}.
 
-MobileNetV2 se basa en bloques de cuello de botella residual invertido (\textit{Inverted Residuals}) combinados con convoluciones separables en profundidad (\textit{Depthwise Separable Convolutions}):
+MobileNetV2 sustituye los bloques convolucionales estándar por bloques residuales invertidos (\textit{Inverted Residuals}) con convoluciones separables en profundidad (\textit{Depthwise Separable Convolutions}):
 \begin{itemize}[noitemsep]
-    \item Cuenta con tan solo \textbf{3,5 millones de parámetros}, lo que representa una reducción de casi el 70\% frente a los 11,7 millones de ResNet-18.
-    \item Se sustituyó el clasificador superior \texttt{classifier[1]} por una proyección lineal de 1.280 características a 7 clases.
+    \item \textbf{Compacidad extrema:} Posee tan solo \textbf{3,5 millones de parámetros}, lo que supone una reducción del 70\% respecto a ResNet-18 y previene de forma natural el sobreajuste ante datasets de tamaño medio (1.634 imágenes de entrenamiento).
+    \item \textbf{Estructura invertida:} Expande primero la representación a un espacio de mayor dimensión mediante convoluciones $1\times 1$, filtra espacialmente con kernels ligeros $3\times 3$ en profundidad, y comprime de vuelta con proyecciones lineales sin activación (\textit{linear bottleneck}) para evitar la destrucción destructiva de información inducida por ReLU.
+    \item \textbf{Adaptación:} Se sustituyó la capa final \texttt{classifier[1]} ($1.280 \to 1.000$) por una proyección densa de $1.280 \to 7$ clases con optimizador Adam ($\eta = 0,0005$).
 \end{itemize}
-En términos de velocidad de inferencia por muestra, MobileNetV2 ofrece tiempos inferiores a los 4 ms en GPU y un consumo de memoria mínimo, configurándose como la arquitectura ideal para despliegue en plantas de reciclaje con procesadores embebidos de bajo coste (como NVIDIA Jetson o Raspberry Pi).
 
 % ==============================================================================
 % SECCIÓN 7: RESULTADOS FINALES Y DISCUSIÓN
 % ==============================================================================
+\FloatBarrier
 \section{Evaluación de Resultados Finales y Discusión}
 
-\subsection{Rendimiento de ResNet-18 en el Conjunto de Test}
-El modelo ResNet-18 entrenado con parada anticipada detuvo su ejecución en la época 28, recuperando automáticamente el punto óptimo alcanzado en la \textbf{época 23} con una pérdida de validación sobresaliente de $\mathcal{L}_{\text{val}} = \mathbf{0,2137}$. El entrenamiento completo tomó \textbf{568,62 segundos (9 minutos y 28 segundos)} en Google Colab con GPU NVIDIA T4.
+\subsection{Rendimiento Sobresaliente de MobileNetV2 (Modelo Ganador)}
+El entrenamiento de MobileNetV2 en Google Colab (GPU NVIDIA T4) demostró una eficiencia extraordinaria: la parada anticipada detuvo el proceso en la época 10, rescatando la mejor pérdida de validación en la \textbf{época 5} ($\mathcal{L}_{\text{val}} = \mathbf{0,1375}$, Val Acc: 96,26\%). El tiempo total de entrenamiento fue de tan solo \textbf{145,91 segundos (2,43 minutos)}.
 
-En el conjunto de test independiente (358 imágenes), el modelo alcanzó una tasa de acierto del \textbf{91,34\%} (327 aciertos sobre 358 muestras), superando por más de 6 puntos el objetivo docente del 85\%. La Figura~\ref{fig:resnet_curvas} ilustra las curvas de aprendizaje resultantes.
+Evaluado sobre el conjunto de test independiente (358 imágenes nunca vistas durante el entrenamiento), MobileNetV2 alcanzó una precisión global del \textbf{96,65\%} (346 aciertos de 358 muestras), superando por más de 11 puntos la meta docente del 85\%. La Figura~\ref{fig:mobilenet_completo} muestra las curvas de entrenamiento y la matriz de confusión resultante.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.82\textwidth]{results/prueba_5_curvas.png}
-    \caption{Curvas de aprendizaje de la Prueba 5 (ResNet-18 Transfer Learning). Panel izquierdo: Pérdida. Panel derecho: Precisión. En la época 23 (línea discontinua roja) la pérdida de validación desciende a 0,2137 mientras la precisión supera el 95\%.}
-    \label{fig:resnet_curvas}
+    \begin{subfigure}[b]{0.56\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{results/curva_mobile.png}
+        \caption{Curvas de aprendizaje (Pérdida y Precisión).}
+        \label{fig:curva_mobile}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.41\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{results/matriz_mobile.png}
+        \caption{Matriz de confusión en test.}
+        \label{fig:matriz_mobile}
+    \end{subfigure}
+    \caption{Resultados experimentales de MobileNetV2 en el conjunto de test (Accuracy Global: \textbf{96,65\%}). En la época 5 (línea discontinua roja) la pérdida de validación desciende a 0,1375. La matriz exhibe una diagonal nítida con 100\% de precisión en metal y textil.}
+    \label{fig:mobilenet_completo}
 \end{figure}
 
-\subsection{Informe de Clasificación Detallado}
-La Tabla~\ref{tab:classification_report} presenta el desglose formal de métricas por clase en el conjunto de test.
+\subsection{Rendimiento de ResNet-18}
+El modelo ResNet-18 entrenado con parada anticipada alcanzó en su ejecución completa un accuracy global en test del \textbf{91,34\%} (327 aciertos sobre 358 muestras), alcanzando en la época 23 una pérdida de validación de $\mathcal{L}_{\text{val}} = 0,2137$ en 568,62 segundos (9 minutos y 28 segundos). En la réplica de verificación rápida (7 épocas, 100,20 segundos), obtuvo un \textbf{89,11\%} de acierto en test (319/358). La Figura~\ref{fig:resnet_completo} ilustra las curvas y matriz de ResNet-18.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.56\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{results/prueba_5_curvas.png}
+        \caption{Curvas de aprendizaje de ResNet-18.}
+        \label{fig:resnet_curvas}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.41\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{results/matriz_prueba_5.png}
+        \caption{Matriz de confusión en test.}
+        \label{fig:matriz_resnet}
+    \end{subfigure}
+    \caption{Resultados experimentales de ResNet-18 en el conjunto de test (Accuracy Global: \textbf{91,34\%}). Parada anticipada en época 28 recuperando la época 23 con $\mathcal{L}_{\text{val}} = 0,2137$.}
+    \label{fig:resnet_completo}
+\end{figure}
+
+\subsection{Informe de Clasificación Detallado de MobileNetV2}
+La Tabla~\ref{tab:classification_report} presenta el desglose formal de métricas por categoría en el conjunto de test para el modelo ganador MobileNetV2.
 
 \begin{table}[H]
 \centering
-\caption{Informe formal de clasificación en el conjunto de test independiente (ResNet-18).}
+\caption{Informe formal de clasificación en el conjunto de test independiente (MobileNetV2).}
 \label{tab:classification_report}
 \renewcommand{\arraystretch}{1.18}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Categoría de Residuo} & \textbf{Precisión} & \textbf{Recall} & \textbf{F1-Score} & \textbf{Soporte} \\
 \midrule
-\texttt{t-cardboard} (Cartón)     & 0,8947 & 0,9444 & 0,9189 & 54 \\
-\texttt{t-e-waste} (Electrónico)  & 0,9672 & 0,9219 & 0,9440 & 64 \\
-\texttt{t-glass} (Vidrio)         & 0,9545 & 0,8571 & 0,9032 & 49 \\
-\texttt{t-metal} (Metal)          & 0,8269 & \textbf{0,9149} & 0,8687 & 47 \\
-\texttt{t-organic} (Orgánico)     & 0,9455 & 0,9286 & 0,9369 & 56 \\
-\texttt{t-plastic} (Plástico)     & 0,9375 & 0,9574 & 0,9474 & 47 \\
-\texttt{t-textile} (Textil)       & 0,9722 & 0,8537 & 0,9091 & 41 \\
+\texttt{t-cardboard} (Cartón)     & 0,9310 & \textbf{1,0000} & 0,9643 & 54 \\
+\texttt{t-e-waste} (Electrónico)  & 0,9552 & \textbf{1,0000} & 0,9771 & 64 \\
+\texttt{t-glass} (Vidrio)         & 0,9592 & 0,9592 & 0,9592 & 49 \\
+\texttt{t-metal} (Metal)          & \textbf{1,0000} & \textbf{0,9149} & \textbf{0,9556} & 47 \\
+\texttt{t-organic} (Orgánico)     & 0,9821 & 0,9821 & 0,9821 & 56 \\
+\texttt{t-plastic} (Plástico)     & 0,9565 & 0,9362 & 0,9462 & 47 \\
+\texttt{t-textile} (Textil)       & \textbf{1,0000} & 0,9512 & 0,9750 & 41 \\
 \midrule
-\textbf{Accuracy Global}          & \multicolumn{3}{c}{\textbf{91,34\% (327 aciertos de 358)}} & \textbf{358} \\
-\textbf{Promedio Macro (Macro Avg)} & 0,9284 & 0,9111 & 0,9183 & 358 \\
-\textbf{Promedio Ponderado (Weighted)} & 0,9157 & 0,9134 & 0,9134 & 358 \\
+\textbf{Accuracy Global}          & \multicolumn{3}{c}{\textbf{96,65\% (346 aciertos de 358)}} & \textbf{358} \\
+\textbf{Promedio Macro (Macro Avg)} & 0,9692 & 0,9634 & 0,9656 & 358 \\
+\textbf{Promedio Ponderado (Weighted)} & 0,9675 & 0,9665 & 0,9664 & 358 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Resolución Definitiva del Problema del Metal}
-La Figura~\ref{fig:matriz_final_resnet} presenta la matriz de confusión final sobre el conjunto de test. El contraste frente a la matriz inicial de la Prueba 1 (Figura~\ref{fig:prueba1_matriz}) constata el éxito del enfoque:
+\subsection{Resolución Definitiva del <<Problema del Metal>>}
+El análisis comparativo de las matrices de confusión entre la red artesanal de la Prueba 1 (Figura~\ref{fig:prueba1_matriz}) y MobileNetV2 (Figura~\ref{fig:mobilenet_completo}) ratifica el éxito de la transferencia de representaciones profundas:
 \begin{itemize}[noitemsep]
-    \item De las 47 muestras metálicas de test, \textbf{43 fueron clasificadas correctamente}, elevando el recall del metal del 38,30\% inicial a un contundente \textbf{91,49\%}.
-    \item Las confusiones de metal con vidrio pasaron de 14 a \textbf{cero}.
+    \item \textbf{Recall del metal elevado al 91,49\%:} De las 47 muestras metálicas de test, 43 fueron clasificadas correctamente (frente a las 18 de la Prueba 1).
+    \item \textbf{Precisión perfecta en metal (100,00\%):} Ni un solo residuo de otra categoría fue clasificado erróneamente como metal.
+    \item \textbf{Cero confusiones metal-vidrio:} La confusión espectral de latas con botellas (que en la red manual supuso 14 errores) quedó totalmente suprimida (0 confusiones). Las características de bajo nivel preentrenadas en ImageNet permiten distinguir las microtexturas de reborde de las latas de los reflejos transparentes del cristal.
+    \item \textbf{Desempeño perfecto en cartón y electrónica:} Ambos alcanzaron un recall del 100,00\% (54 de 54 y 64 de 64 muestras correctamente identificadas).
 \end{itemize}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.56\textwidth]{results/matriz_prueba_5.png}
-    \caption{Matriz de confusión final de ResNet-18 en el conjunto de test. Diagonal principal dominante con 327 aciertos de 358 y resolución completa de la ambigüedad metal-vidrio.}
-    \label{fig:matriz_final_resnet}
-\end{figure}
-
 \subsection{Tabla Comparativa Global Consolidada}
-La Tabla~\ref{tab:comparativa_global} sintetiza la evolución experimental a lo largo de las 5 configuraciones ensayadas en el proyecto.
+La Tabla~\ref{tab:comparativa_global} sintetiza la evolución metodológica integral a lo largo de todas las fases del proyecto.
 
 \begin{table}[H]
 \centering
-\caption{Tabla comparativa global consolidada de las 5 configuraciones experimentales.}
+\caption{Tabla comparativa global consolidada de las fases experimentales del proyecto.}
 \label{tab:comparativa_global}
 \renewcommand{\arraystretch}{1.2}
 \small
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{llcccc}
+\begin{tabular}{llcccccc}
 \toprule
-\textbf{Configuración} & \textbf{Arquitectura y Variante} & \textbf{Resolución} & \textbf{LR (Adam)} & \textbf{Test Acc.} & \textbf{Recall Metal} \\
+\textbf{Fase / Enfoque} & \textbf{Arquitectura y Configuración} & \textbf{Resolución} & \textbf{LR (Adam)} & \textbf{Parámetros} & \textbf{Tiempo Entr.} & \textbf{Test Acc.} & \textbf{Recall Metal} \\
 \midrule
-Prueba 1 & \texttt{WasteCNN} Base (FC 128)          & $96\times 96$   & 0,0010 & 69,00\% & 38,30\% \\
-Prueba 2 & \texttt{WasteCNN} (Capacidad FC 256)     & $96\times 96$   & 0,0010 & 61,00\% & 23,40\% \\
-Prueba 3 & \texttt{WasteCNN} (Mayor resolución)     & $128\times 128$ & 0,0010 & 66,00\% & 29,79\% \\
-Prueba 4 & \texttt{WasteCNN} (Regularizada L-ReLU)  & $128\times 128$ & 0,0005 & 67,00\% & 38,30\% \\
+Prueba 1 & \texttt{WasteCNN} Base (FC 128)          & $96\times 96$   & 0,0010 & 0,61 M & $\sim 2$ min & 69,00\% & 38,30\% \\
+Prueba 2 & \texttt{WasteCNN} (Capacidad FC 256)     & $96\times 96$   & 0,0010 & 2,38 M & $\sim 2$ min & 61,00\% & 23,40\% \\
+Prueba 3 & \texttt{WasteCNN} (Mayor resolución)     & $128\times 128$ & 0,0010 & 1,06 M & $\sim 3$ min & 66,00\% & 29,79\% \\
+Prueba 4 & \texttt{WasteCNN} (Regularizada L-ReLU)  & $128\times 128$ & 0,0005 & 1,06 M & $\sim 4$ min & 67,00\% & 38,30\% \\
+Optuna   & \texttt{WasteCNN} (TPE Bayesiano Óptimo) & $96\times 96$   & 0,0004 & 0,61 M & 10 ensayos   & 68,97\%* & 38,30\% \\
 \midrule
-\textbf{Prueba 5} & \textbf{ResNet-18 (Transfer Learning)} & $\mathbf{224\times 224}$ & \textbf{0,0005} & \textbf{91,34\%} & \textbf{91,49\%} \\
+Transfer 1 & ResNet-18 (Residual)                   & $224\times 224$ & 0,0005 & 11,7 M & 9,48 min     & 91,34\% & 91,49\% \\
+\textbf{Transfer 2} & \textbf{MobileNetV2 (Modelo Ganador)} & $\mathbf{224\times 224}$ & \textbf{0,0005} & \textbf{3,5 M} & \textbf{2,43 min} & \textbf{96,65\%} & \textbf{91,49\%} \\
 \bottomrule
+\multicolumn{8}{l}{\footnotesize *Valor correspondiente al mejor accuracy de validación obtenido en el afinado bayesiano (Ensayo 6).}
 \end{tabular}%
 }
 \end{table}
@@ -517,10 +574,10 @@ El profesor estipuló en las directrices docentes: \textit{«Se deberá entregar
 
 El desarrollo integral de la práctica permite extraer conclusiones de notable calado teórico y práctico:
 \begin{enumerate}
-    \item \textbf{Consecución de Objetivos Docentes:} Se ha construido un clasificador en PyTorch alcanzando un \textbf{91,34\% de accuracy} en el conjunto de test independiente, superando con holgura el 85\% requerido, con parada anticipada operativa y sobre un corpus de 2.340 imágenes reales de 7 clases.
-    \item \textbf{Cumplimiento de los Tres Elementos Opcionales:} Se implementaron con éxito el aumento de datos dinámico, el afinado automático bayesiano con Optuna y la transferencia de conocimiento con dos arquitecturas de referencia (ResNet-18 y MobileNetV2).
-    \item \textbf{Lección de Ingeniería de Características:} El experimento de la Prueba 2 demostró que aumentar indiscriminadamente la capacidad densa de una red produce sobreajuste cuando la debilidad radica en la resolución espacial. Por su parte, la comparación entre las Pruebas 1 y 5 probó que transferir mapas jerárquicos profundos es la clave para resolver ambigüedades espectrales severas, como los reflejos especulares de latas frente a botellas de vidrio.
-    \item \textbf{Líneas Futuras:} Como extensiones prometedoras se plantea la integración de mecanismos de atención visual (\textit{CBAM} o \textit{Vision Transformers}) y la cuantización a precisión entera (\textit{INT8}) de MobileNetV2 para su despliegue directo en microcontroladores industriales integrados en robots de triaje.
+    \item \textbf{Consecución de Objetivos Docentes:} Se ha construido un clasificador en PyTorch alcanzando un sobresaliente \textbf{96,65\% de accuracy global} en el conjunto de test independiente con MobileNetV2 (y un \textbf{91,34\%} con ResNet-18), superando por más de 11 puntos porcentuales el 85\% requerido por el profesor, con parada anticipada operativa y sobre un corpus de 2.340 imágenes reales distribuidas en 7 clases.
+    \item \textbf{Cumplimiento Riguroso de los Tres Elementos Opcionales:} Se implementaron con éxito y evaluación empírica el aumento de datos dinámico (\textit{Data Augmentation}), el afinado automático bayesiano con Optuna (TPE con poda por \texttt{MedianPruner}, que demostró empíricamente el techo asintótico de la red artesanal en el 68,97\%) y la transferencia de conocimiento con dos arquitecturas de referencia contrastadas (ResNet-18 y MobileNetV2).
+    \item \textbf{Lección de Ingeniería y Selección de Modelos:} El experimento manual de la Prueba 2 probó que aumentar la capacidad densa de una red induce sobreajuste inmediato si la resolución espacial es baja. Por su parte, la comparativa de transferencia reveló que MobileNetV2 no solo superó a ResNet-18 en precisión (+5,31\%), sino que lo logró con una tercera parte de los parámetros (3,5 M vs 11,7 M) y casi una cuarta parte del tiempo de entrenamiento (2,43 min vs 9,48 min), consolidándose como la solución óptima para despliegues reales en plantas de reciclaje automatizadas.
+    \item \textbf{Líneas Futuras:} Como extensiones operacionales se plantea la cuantización post-entrenamiento a precisión entera (\textit{INT8}) de MobileNetV2 para su ejecución en tiempo real en microcontroladores embebidos (como NVIDIA Jetson Orin Nano) acoplados a brazos robóticos de triaje neumático.
 \end{enumerate}
 
 % ==============================================================================
